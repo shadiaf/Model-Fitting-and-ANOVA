@@ -1,0 +1,312 @@
+---
+title: 'Problem Set 3: Model Fitting and ANOVA'
+author: "Shadia Farah"
+date: "12/12/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+### 1. Model Comparison
+Using the techniques for model comparison covered in this course, evaluate whether a more complex model that incorporates either or both of these additional terms better explains the data. Explain the method you used and your reasoning for doing so.
+
+### Answer
+In order to determine whether the simpler model or more complex model better explain the data there are several things we can check. 
+
+For the simpler model (Michaelis-Menten model), we can begin by entering the data in R. We can proceed with a non-linear regression in the normal fashion. Guesses for $V_{max}$ and $K_m$ are based by glancing at the data and plot. We can then plot the model-predicted curve.
+
+For our more complex model, we can follow the same procedure above. We can see that this model includes 2 additional parameters, for a total of 4 parameters. We realize that if we set $M_{ns}$ = 0 and $V_{bk}$ = 0 as well our model reduces to the simpler model. These models are thus nested as the simpler model is a special case of the more complex model. 
+
+The question asks to evaluate a more complex model that incorporates either or both of the additional terms, so we will look at the model with just the $M_{ns}[S]$ term and then look at it again with just the $V_{bk}$ term.  
+
+The code blacks below will output the plot with model-predicted curves. 
+
+#### The Simple Model (Michaelis-Menten model)
+```{r The Simple Model}
+#Here we enter the data
+myoglobin = data.frame(s = c(  1.1,  1.5,  1.6,  2.3,   3.4,   5.3,   7.5,   8.4,   14.1),
+                        v = c(1.49, 1.79, 1.79, 2.11, 2.83, 3.42, 3.79, 3.97, 4.08))
+
+#Our first model: the simpler model
+#Here we are proceeding with a non-linear regression
+m0.myoglobin <- nls(v ~ Vmax * s / (Km + s),
+                    start = list(Vmax = 4, Km = 2),
+                    data = myoglobin)
+#Here is a summary for our simpler model
+summary(m0.myoglobin)
+
+#Now we are plotting the curve predicted by the model. 
+plot(v ~ s, data = myoglobin, xlim =c (0, 15), ylim = c(0, 5))
+
+x <- 0:15; lines(x, predict(m0.myoglobin, newdata = data.frame(s = x)),
+                 col = "blue", lwd = 2)
+```
+
+
+
+#### The Simple Model (Michaelis-Menten model) vs. The Complex Model (Both Additional Parameters)
+```{r The Simple Model vs. The Complex Model (Both Additional Parameters)}
+# Here we are plotting the simpler model again to compare to the complex model
+plot(v ~ s, data = myoglobin, xlim =c (0, 15), ylim = c(0, 5))
+
+x <- 0:15; lines(x, predict(m0.myoglobin, newdata = data.frame(s = x)),
+                 col = "blue", lwd = 2)
+
+#Our second model: the complex model with both additional parameters. 
+m1.myoglobin <- nls(v ~ (Vmax * s / (Km + s)) + Mns * s + Vbk,
+                     start = list(Vmax = 4, Km = 2, Mns = 0, Vbk = 0),
+                     data = myoglobin)
+#Here is a summary for our complex model with both additional parameters.
+summary(m1.myoglobin)
+
+lines(x, predict(m1.myoglobin, newdata = data.frame(s = x)),
+      col = "red", lwd = 2)
+
+```
+
+
+
+#### The Simple Model (Michaelis-Menten model) vs. The Complex Model (Additional Parameter: $M_{ns}[S]$)
+```{r}
+# Here we are plotting the simpler model again to compare to the complex model
+plot(v ~ s, data = myoglobin, xlim =c (0, 15), ylim = c(0, 5))
+
+x <- 0:15; lines(x, predict(m0.myoglobin, newdata = data.frame(s = x)),
+                 col = "blue", lwd = 2)
+
+#Our second model: the complex model that just include the Mns term. 
+m2.myoglobin <- nls(v ~ (Vmax * s / (Km + s)) + Mns * s, 
+                     start = list(Vmax = 4, Km = 2, Mns = 0),
+                     data = myoglobin)
+#Here is a summary for our complex model that just includes the Mns term.
+summary(m2.myoglobin)
+
+lines(x, predict(m2.myoglobin, newdata = data.frame(s = x)),
+      col = "yellow", lwd = 2)
+```
+
+
+#### The Simple Model (Michaelis-Menten model) vs. The Complex Model (Additional Parameter: $V_{bk}$)
+```{r}
+# Here we are plotting the simpler model again to compare to the complex model
+plot(v ~ s, data = myoglobin, xlim =c (0, 15), ylim = c(0, 5))
+
+x <- 0:15; lines(x, predict(m0.myoglobin, newdata = data.frame(s = x)),
+                 col = "blue", lwd = 2)
+
+#Our third model: the complex model that just includes the Vbk term. 
+m3.myoglobin <- nls(v ~ (Vmax * s / (Km + s)) + Vbk,
+                     start = list(Vmax = 4, Km = 2, Vbk = 0),
+                     data = myoglobin)
+#Here is a summary for our complex model that just includes the Vbk term
+summary(m3.myoglobin)
+
+
+lines(x, predict(m3.myoglobin, newdata = data.frame(s = x)),
+      col = "green", lwd = 2)
+
+```
+
+#### Everything in one plot
+
+Here is a graph depicting all our models.
+```{r}
+plot(v ~ s, data = myoglobin, xlim =c (0, 15), ylim = c(0, 5))
+x <- 0:15; lines(x, predict(m0.myoglobin, newdata = data.frame(s = x)),
+                 col = "blue", lwd = 2)
+lines(x, predict(m1.myoglobin, newdata = data.frame(s = x)),
+      col = "red", lwd = 2)
+lines(x, predict(m2.myoglobin, newdata = data.frame(s = x)),
+      col = "yellow", lwd = 2)
+lines(x, predict(m3.myoglobin, newdata = data.frame(s = x)),
+      col = "green", lwd = 2)
+
+```
+
+**Just by glancing at the above plots, we can sense that the more complex model with both additional terms seems like the best fit.** 
+
+#### QQ-plot
+
+##### QQ- plots for the simple model (Michaelis-Menten model)
+```{r}
+plot(residuals(m0.myoglobin) ~ predict(m0.myoglobin))
+qqnorm(residuals(m0.myoglobin))
+qqline(residuals(m0.myoglobin))
+shapiro.test(residuals(m0.myoglobin))
+```
+
+##### QQ- plots for the Complex Model (Both Additional Parameters)
+```{r}
+plot(residuals(m1.myoglobin) ~ predict(m1.myoglobin))
+qqnorm(residuals(m1.myoglobin))
+qqline(residuals(m1.myoglobin))
+shapiro.test(residuals(m1.myoglobin))
+```
+
+##### QQ- plots for the Complex Model(Additional Parameter: $M_{ns}[S]$)
+```{r}
+plot(residuals(m2.myoglobin) ~ predict(m2.myoglobin))
+qqnorm(residuals(m2.myoglobin))
+qqline(residuals(m2.myoglobin))
+shapiro.test(residuals(m2.myoglobin))
+```
+
+##### QQ- plots for the Complex Model(Additional Parameter: $V_{bk}$)
+```{r}
+plot(residuals(m3.myoglobin) ~ predict(m3.myoglobin))
+qqnorm(residuals(m3.myoglobin))
+qqline(residuals(m3.myoglobin))
+shapiro.test(residuals(m3.myoglobin))
+```
+
+**Our QQ-plots and the results of the shapiro.test tell us that nothing here is overtly wrong as the residuals are normally distributed.** 
+
+#### Sum of Squares
+We can quantify by looking at the sum of the squares of the residuals. 
+
+```{r}
+# The sum of residual of the simpler model
+sum(residuals(m0.myoglobin) ^ 2)
+
+# The sum of residual of the more complex model with both additional parameters
+sum(residuals(m1.myoglobin) ^ 2)
+
+# The sum of residual of the more complex model with one additional parameter (Mns)
+sum(residuals(m2.myoglobin) ^ 2)
+
+# The sum of residual of the more complex model with one additional parameter (Vbk)
+sum(residuals(m3.myoglobin) ^ 2)
+
+```
+
+**Over here we see that the more complex model with both additional parameters gives us the smallest residual sum of squares, indicating it is the best fit.**
+
+
+#### F-test
+
+Most importantly, we can compute an F-test to compare the models. The F-test is applicable here because it is for nested models and only when we are fitting them to the exact data. This is exactly what we are doing.
+
+The logic behind the F-test is that when a complex model is simplified, the SSQ will increase. If the change is SSQ (sum of squares) is relatively equal to the change in the degrees of freedom (DOF), the simpler model is the correct one. If the SSQ changes way more compared to the change in DOF, the complex model is the correct one. 
+
+The logic behind the p.value computed by the F-test is that if we assume that the simpler model is the correct one, what is the probability we see a change in SSQ, as large as the one observed when the complex model is simplified. If the p.value is lower than our cutoff, we can reject the null hypothesis and accept the more complex model. 
+
+The code below will compute the F-test with our respective models. 
+
+```{r}
+# F-test with comparing the simple model to the complex model with both parameters
+anova(m0.myoglobin, m1.myoglobin)
+
+# F-test with comparing the simple model to the complex model with one additional parameter (Mns)
+anova(m0.myoglobin, m2.myoglobin)
+
+# F-test with comparing the simple model to the complex model with one additional parameter (Vbk)
+anova(m0.myoglobin, m3.myoglobin)
+```
+
+**In our F-test, the only significant result we see is with the complex model with both additional terms.**
+
+In this case, the SSQ changed from 0.025188 to 0.108325 which is a 330.066% increase. The degress of freedom went from 5 to 7 which is a 40% increase. The F-value is a ratio of these changes. An F-value of 1 would indicate that, the relative change in SSQ is about equal to the relative change in the DOF. In other words, we don't expect these changes to be inconsistent with the null hypothesis. Our F-value is 8.2516, indicating that the SSQ changes way more compared to the change in DOF.
+
+Our p.value is 0.02607. This is less than our standard cut-off of 0.05, so we can reject the simpler model. Essentially, if the simpler model were correct we'd be quite surprised to see as large a change in SSQ as we did.
+
+When we compare the simpler model to the 2 models with just 1 additional term, we see that the p.value is greater than 0.05 for each. We do not have a reason to reject the simpler model in these scenarios. 
+
+**Thus, the more complex model with both additional terms $M_{ns}[S]$ (non-specific binding) AND $V_{bk}$ (background signal) best explains the data.** 
+
+
+## AVOVA
+
+### Part 1 Question
+Compare the effect of each drug relative to control using an independent t-test. Without any multiple hypothesis testing corrections, which drugs are deemed to be statistically significant?
+
+### Part 1 Answer
+In order to enter this question, we first enter the data. Next we will perform an independent t-test comparing each drug to the control.
+
+```{r}
+# Here we enter the data
+ctrl <- c(7.16, 6.85, 8.10, 7.40, 7.22, 7.83, 7.76, 6.02, 8.06, 6.96)
+drgA <- c(9.62, 8.05, 8.27, 9.33, 9.49, 8.44, 9.82, 8.19)
+drgB <- c(6.19, 6.57, 7.21, 5.97, 6.93, 6.09, 6.91, 6.78, 7.16)
+drgC <- c(5.64, 6.55, 6.79, 7.24, 7.33, 7.24, 6.71)
+drgD <- c(10.42, 10.85, 10.75, 10.86, 11.61, 11.68, 11.14, 11.29)
+
+# Here we are assign p.raw as a vector with a length of 4. The p.value from each t.test will be added to p.raw. 
+p.raw <- numeric(length = 4)
+p.raw[1] <- t.test(ctrl, drgA)$p.value 
+p.raw[2] <- t.test(ctrl, drgB)$p.value
+p.raw[3] <- t.test(ctrl, drgC)$p.value
+p.raw[4] <- t.test(ctrl, drgD)$p.value
+
+# These are the values for p.raw
+p.raw
+
+# These will indicate which values are less than our cut-off of 0.05.
+p.raw < 0.05
+```
+
+With no multiple hypothesis corrections done, the drugs that are deemed statistically significant are drugs A, B and D. 
+
+### Part 2 Question
+Perform an appropriate multiple hypothesis testing correction. Do any of your conclusions change?
+
+### Part 2 Answer
+Here we can do a Bonferroni correction. 
+```{r}
+# Here is the Bonferroni correction
+p.adjust(p.raw, method = 'bonferroni') <0.05
+```
+Using Bonferroni, drugs A and D are significant. 
+
+### Part 3 Question
+Re-analyze the data using an omnibus ANOVA analysis followed by appropriate post-tests. Do any of your conclusions change?
+
+### Part 3 Answer
+
+In the code below we run an omnibus ANOVA analysis. 
+
+```{r}
+# First we begin by entering the data
+control <- data.frame(t = c(7.16, 6.85, 8.10, 7.40, 7.22, 7.83, 7.76, 6.02, 8.06, 6.96), group = "ctrl")
+drug_a <- data.frame(t = c(9.62, 8.05, 8.27, 9.33, 9.49, 8.44, 9.82, 8.19), group = "drgA")
+drug_b <- data.frame(t = c(6.19, 6.57, 7.21, 5.97, 6.93, 6.09, 6.91, 6.78, 7.16), group = "drgB")
+drug_c <- data.frame(t = c(5.64, 6.55, 6.79, 7.24, 7.33, 7.24, 6.71), group = "drgC")
+drug_d <- data.frame(t = c(10.42, 10.85, 10.75, 10.86, 11.61, 11.68, 11.14, 11.29), group = "drgD")
+
+# The rbind() function combines vector, matrix or data frame by row
+d <- rbind(control, drug_a, drug_b, drug_c, drug_d)
+
+# This uses the aov() function is similar to the anova() function but it is a bit more direct. It doesn’t show or even compute the group means.
+aov_results <- aov(t ~ group, data = d)
+
+summary (aov_results)
+```
+
+The results indicate that not all of the means are the same. 
+
+It's important to ensure that our groups have equal SDs. The leveneTest() function can help us with this. 
+
+```{r}
+#Perform leveneTest() to make sure SDs are equal
+library(car)
+leveneTest(t ~ group, data = d)
+```
+
+Our p.value is above 0.05, indicating that we can not reject our null hypothesis that the variances of all the groups are the same. 
+
+In order to tell which groups differ and by how much we can do a post-test. We can do a Dunnett's test since we're only interested in comparing each drug to the control condition but not to each other.
+
+```{r}
+# The code below will perform a Dunnett's test
+library(DescTools)
+DunnettTest(t ~ group, data = d)
+```
+
+Using Dunnett's test we see that drugs A, B and D are significant. My conclusions do change because with the independent t.tests and the Bonferroni correction, only drugs A and D were significant. Because the Bonferroni is conservative we may have had a false negative. 
+
+### Part 4 Question
+Which method do you think is the most appropriate way to analyze this data?
+
+### Part 4 Answer
+I think using the ANOVA is the most appropriate way to analyze the data. The ANOVA is less work and also with the ANOVA we have extra information such as variance due to the ANOVA calculating the SSQ. 
+
